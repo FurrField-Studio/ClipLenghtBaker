@@ -25,12 +25,18 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
         public void Bake(Animator animator)
         {
             RuntimeAnimatorController = animator.runtimeAnimatorController;
-            var animatorController = animator.runtimeAnimatorController as AnimatorController;
-            Clips = new Clip[RuntimeAnimatorController.animationClips.Length];
+
+            AnimatorController animatorController;
             
-            for (int index = 0; index < RuntimeAnimatorController.animationClips.Length; index++)
+            if (animator.runtimeAnimatorController is AnimatorOverrideController animatorOverrideController)
             {
-                Clips[index] = new Clip(RuntimeAnimatorController.animationClips[index]);
+                animatorController = animatorOverrideController.runtimeAnimatorController as AnimatorController;
+                BakeClipsDataForOverrideController(animatorOverrideController);
+            }
+            else
+            {
+                animatorController = animator.runtimeAnimatorController as AnimatorController;
+                BakeClipsDataForController(animator.runtimeAnimatorController as AnimatorController);
             }
 
             List<State> animatorStates = new List<State>();
@@ -58,6 +64,35 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
             }
         }
 
+        private void BakeClipsDataForOverrideController(AnimatorOverrideController animatorOverrideController)
+        {
+            List<KeyValuePair<AnimationClip, AnimationClip>> overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+            
+            animatorOverrideController.GetOverrides(overrides);
+
+            List<Clip> clips = new List<Clip>(RuntimeAnimatorController.animationClips.Length);
+
+            for (int index = 0; index < RuntimeAnimatorController.animationClips.Length; index++)
+            {
+                if (overrides[index].Value != null)
+                {
+                    clips.Add(new Clip(overrides[index].Value));
+                }
+            }
+
+            Clips = clips.ToArray();
+        }
+        
+        private void BakeClipsDataForController(AnimatorController animatorController)
+        {
+            Clips = new Clip[RuntimeAnimatorController.animationClips.Length];
+            
+            for (int index = 0; index < RuntimeAnimatorController.animationClips.Length; index++)
+            {
+                Clips[index] = new Clip(RuntimeAnimatorController.animationClips[index]);
+            }
+        }
+
         public Clip GetClipFromStateName(string stateName) => Array.Find(States, state => state.Name == stateName).Clip;
 
         public Clip GetClipFromStateHash(int stateHash) => Array.Find(States, state => state.Hash == stateHash).Clip;
@@ -69,6 +104,7 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
     {
         public string Name;
         public int Hash;
+        public float StateTime;
         public Clip Clip;
 
         public State(AnimatorState animatorState, Clip[] clips)
@@ -78,6 +114,7 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
             var animationClip = animatorState.motion as AnimationClip;
 
             Clip = animationClip != null ? Array.Find(clips, clip => clip.Name == animationClip.name) : null;
+            StateTime = Clip != null ? animatorState.speed * Clip.Lenght : 0;
         }
     }
     
