@@ -34,19 +34,21 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
                 BakeClipsDataForOverrideController(animatorOverrideController);
             }
             else
-            {
+            { 
                 animatorController = animator.runtimeAnimatorController as AnimatorController;
                 BakeClipsDataForController(animator.runtimeAnimatorController as AnimatorController);
             }
 
             List<State> animatorStates = new List<State>();
             
-            foreach(AnimatorControllerLayer i in animatorController.layers) //for each layer
+            foreach(AnimatorControllerLayer layer in animatorController.layers) //for each layer
             {
-                foreach (ChildAnimatorState j in i.stateMachine.states) //for each state
+                foreach (ChildAnimatorState childAnimatorState in layer.stateMachine.states) //for each state
                 {
-                    animatorStates.Add(new State(j.state, Clips));
+                    animatorStates.Add(new State(childAnimatorState.state, Clips));
                 }
+
+                AddAnimatorStatesRecursive(ref animatorStates, layer.stateMachine);
             }
 
             States = animatorStates.ToArray();
@@ -61,6 +63,21 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
             for (int i = 0; i < States.Length; i++)
             {
                 m_StateHashToClip[i] = States[i].Hash;
+            }
+        }
+
+        private void AddAnimatorStatesRecursive(ref List<State> animatorStates, AnimatorStateMachine animatorStateMachine)
+        {
+            if(animatorStateMachine.stateMachines.Length == 0) return;
+
+            foreach (ChildAnimatorStateMachine childAnimatorStateMachine in animatorStateMachine.stateMachines) //for each substate
+            {
+                foreach (var childAnimatorState in childAnimatorStateMachine.stateMachine.states)
+                {
+                    animatorStates.Add(new State(childAnimatorState.state, Clips));
+                }
+
+                AddAnimatorStatesRecursive(ref animatorStates,  childAnimatorStateMachine.stateMachine);
             }
         }
 

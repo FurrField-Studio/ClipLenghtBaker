@@ -1,4 +1,6 @@
-﻿using FurrFieldStudio.ClipLenghtBaker.Runtime;
+﻿using System.Collections.Generic;
+using System.Linq;
+using FurrFieldStudio.ClipLenghtBaker.Runtime;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,7 +9,8 @@ namespace FurrFieldStudio.ClipLenghtBaker.Editor
     [CustomEditor(typeof(ClipBankSO))]
     public class ClipBankSOInspector : UnityEditor.Editor
     {
-        private bool m_Foldout;
+        private bool m_BakingFoldout;
+        private bool m_DebugFoldout;
 
         private Animator m_Animator;
         
@@ -15,8 +18,18 @@ namespace FurrFieldStudio.ClipLenghtBaker.Editor
         {
             var clipBank = target as ClipBankSO;
 
-            m_Foldout = EditorGUILayout.Foldout(m_Foldout, "Baking");
-            if(m_Foldout)
+            RenderBakingFoldout(clipBank);
+            RenderDebugFoldout(clipBank);
+            
+            GUILayout.Space(16);
+            
+            DrawDefaultInspector();
+        }
+
+        private void RenderBakingFoldout(ClipBankSO clipBank)
+        {
+            m_BakingFoldout = EditorGUILayout.Foldout(m_BakingFoldout, "Baking");
+            if(m_BakingFoldout)
             {
                 m_Animator = EditorGUILayout.ObjectField("Animator", m_Animator, typeof(Animator), allowSceneObjects: true) as Animator;
                 
@@ -32,10 +45,29 @@ namespace FurrFieldStudio.ClipLenghtBaker.Editor
                     }
                 }   
             }
+        }
 
-            GUILayout.Space(16);
-            
-            DrawDefaultInspector();
+        private void RenderDebugFoldout(ClipBankSO clipBank)
+        {
+            m_DebugFoldout = EditorGUILayout.Foldout(m_DebugFoldout, "Debug");
+            if(m_DebugFoldout)
+            {
+                if (GUILayout.Button("List unassigned clips"))
+                {
+                    List<Clip> list = clipBank.Clips.ToList();
+
+                    foreach (var state in clipBank.States)
+                    {
+                        list.Remove(list.Find(clip => clip.Name == state.Clip.Name));
+                    }
+
+                    Debug.Log("Unassigned clips:");
+                    foreach (var clip in list)
+                    {
+                        Debug.Log(clip.Name);
+                    }
+                }   
+            }
         }
     }
 }
