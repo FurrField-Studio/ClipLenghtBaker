@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
+
+#if UNITY_EDITOR
+
 using UnityEditor;
 using UnityEditor.Animations;
-using UnityEngine;
+
+#endif
 
 namespace FurrFieldStudio.ClipLenghtBaker.Runtime
 {
@@ -22,6 +27,7 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
         [SerializeField][HideInInspector]
         private int[] m_StateHashToClip;
 
+#if UNITY_EDITOR
         public void Bake(Animator animator)
         {
             RuntimeAnimatorController = animator.runtimeAnimatorController;
@@ -109,6 +115,7 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
                 Clips[index] = new Clip(RuntimeAnimatorController.animationClips[index]);
             }
         }
+#endif
 
         public Clip GetClipFromStateName(string stateName) => Array.Find(States, state => state.Name == stateName).Clip;
 
@@ -123,7 +130,8 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
         public int Hash;
         public float StateTime;
         public Clip Clip;
-
+        
+#if UNITY_EDITOR
         public State(AnimatorState animatorState, Clip[] clips)
         {
             Name = animatorState.name;
@@ -133,6 +141,7 @@ namespace FurrFieldStudio.ClipLenghtBaker.Runtime
             Clip = animationClip != null ? Array.Find(clips, clip => clip.Name == animationClip.name) : null;
             StateTime = Clip != null ? animatorState.speed * Clip.Lenght : 0;
         }
+#endif
     }
     
     [Serializable]
